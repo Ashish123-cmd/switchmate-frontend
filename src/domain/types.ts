@@ -1,4 +1,4 @@
-export interface Experience {
+﻿export interface Experience {
   id: string;
   company: string;
   title: string;
@@ -28,6 +28,7 @@ export interface UserProfile {
   experiences: Experience[];
   educations: Education[];
   resume: { fileName: string; uploadedAt: string } | null;
+  onboardingCompleted?: boolean;
 }
 
 export interface JobPreferences {
@@ -99,3 +100,54 @@ export interface AutoApplySettings {
   excludedCompanies: string[];
   requireApproval: boolean;
 }
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  profile: { onboardingCompleted: boolean };
+}
+
+export interface AuthSession {
+  token: string;
+  user: AuthUser;
+}
+
+export interface GoogleAuthSession extends AuthSession {
+  isNewUser: boolean;
+}
+
+export interface ParsedExperience {
+  company: string | null;
+  title: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+}
+
+export interface ParsedEducation {
+  institution: string | null;
+  degree: string | null;
+  field: string | null;
+  startYear: number | null;
+  endYear: number | null;
+}
+
+export interface ParsedProfile {
+  name: string | null;
+  phone: string | null;
+  location: string | null;
+  headline: string | null;
+  summary: string | null;
+  totalExperienceYears: number | null;
+  skills: string[] | null;
+  experiences: ParsedExperience[] | null;
+  educations: ParsedEducation[] | null;
+}
+
+export interface ResumeDraft {
+  draftId: string;
+  parsedProfile: ParsedProfile;
+  expiresAt: string;
+}
+

@@ -10,8 +10,8 @@ export function useOnboarding() {
   const services = useServices();
   const { currentUser, refreshProfileStatus } = useAuth();
   const navigate = useNavigate();
-  const wizard = useWizard(wizardSteps);
   const [data, setData] = useState<WizardData | null>(null);
+  const wizard = useWizard(wizardSteps, data?.profile ?? null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadVersion, setLoadVersion] = useState(0);
   const [finishError, setFinishError] = useState<string | null>(null);
@@ -66,6 +66,7 @@ export function useOnboarding() {
     setIsSubmitting(true);
     try {
       await services.profile.saveProfile(dataToSave.profile);
+      await services.profile.completeProfile();
       const completed = await refreshProfileStatus();
       if (!completed) throw new Error('Complete your profile before continuing.');
       navigate('/jobs', { replace: true });

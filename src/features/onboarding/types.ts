@@ -32,4 +32,5 @@ export interface WizardStepConfig {
   id: WizardStepId;
   title: string;
   component: ComponentType<WizardStepProps>;
+  isSkipped?: (profile: UserProfile) => boolean;
 }

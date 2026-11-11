@@ -1,39 +1,58 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/app/AuthContext';
+import { useServices } from '@/app/ServicesProvider';
+import { GoogleSignInButton } from '@/features/auth/components/GoogleSignInButton';
+import { useGoogleSignIn } from '@/features/auth/hooks/useGoogleSignIn';
+import { useSignupDraft } from '@/features/auth/context/SignupDraftContext';
+import { toUserProfile } from '@/features/auth/lib/toUserProfile';
+import { FileDropzone } from '@/shared/components/FileDropzone';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
-import { FormField } from '@/shared/ui/FormField';
-import { Input } from '@/shared/ui/Input';
-import { signupSchema, type SignupFormValues } from '@/features/auth/schemas/signupSchema';
-import { zodResolver } from '@/features/auth/lib/zodResolver';
+import { validateResumeFile } from '@/shared/utils/validateResumeFile';
 
 export function SignupPage() {
-  const [serviceError, setServiceError] = useState<string | null>(null);
-  const { signup, isLoading } = useAuth();
+  const { auth } = useServices();
+  const { setDraft } = useSignupDraft();
+  const { handleCredential, error: googleError, isLoading: googleLoading } = useGoogleSignIn();
   const navigate = useNavigate();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    mode: 'onBlur',
-  });
+  const [file, setFile] = useState<File | null>(null);
+  const [status, setStatus] = useState<'idle' | 'parsing' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(values: SignupFormValues) {
-    setServiceError(null);
+  async function parse(selectedFile: File) {
+    const validationError = validateResumeFile(selectedFile);
+    setFile(selectedFile);
+    if (validationError) {
+      setStatus('error');
+      setError(validationError);
+      return;
+    }
+
+    setStatus('parsing');
+    setError(null);
     try {
-      await signup(values.name, values.email, values.password);
-      navigate('/onboarding', { replace: true });
-    } catch (error) {
-      setServiceError(
-        error instanceof Error && error.message
-          ? error.message
-          : 'Unable to create your account. Please try again.',
+      const draft = await auth.parseResumeForSignup(selectedFile);
+      setDraft({
+        draftId: draft.draftId,
+        parsedProfile: toUserProfile(draft.parsedProfile, selectedFile),
+      });
+      navigate('/signup/confirm');
+    } catch (parseError) {
+      setStatus('error');
+      setError(
+        parseError instanceof Error && parseError.message
+          ? parseError.message
+          : 'Unable to read your resume. Please try again.',
       );
     }
+  }
+
+  function handleFileSelect(selectedFile: File) {
+    void parse(selectedFile);
+  }
+
+  function retry() {
+    if (file) void parse(file);
   }
 
   return (
@@ -41,66 +60,51 @@ export function SignupPage() {
       <Card className="w-full max-w-md space-y-6 p-7">
         <div className="space-y-2">
           <p className="text-sm font-semibold text-emerald-800">Switchmate</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Create your account
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Create your account</h1>
+          <p className="text-sm text-slate-600">Choose how you want to get started.</p>
         </div>
-        <form className="space-y-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-          <FormField error={errors.name?.message} id="signup-name" label="Full name">
-            <Input
-              autoComplete="name"
-              id="signup-name"
-              type="text"
-              aria-invalid={Boolean(errors.name)}
-              aria-describedby={errors.name ? 'signup-name-error' : undefined}
-              {...register('name')}
-            />
-          </FormField>
-          <FormField error={errors.email?.message} id="signup-email" label="Email address">
-            <Input
-              autoComplete="email"
-              id="signup-email"
-              type="email"
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? 'signup-email-error' : undefined}
-              {...register('email')}
-            />
-          </FormField>
-          <FormField error={errors.password?.message} id="signup-password" label="Password">
-            <Input
-              autoComplete="new-password"
-              id="signup-password"
-              type="password"
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? 'signup-password-error' : undefined}
-              {...register('password')}
-            />
-          </FormField>
-          <FormField
-            error={errors.confirmPassword?.message}
-            id="signup-confirm-password"
-            label="Confirm password"
-          >
-            <Input
-              autoComplete="new-password"
-              id="signup-confirm-password"
-              type="password"
-              aria-invalid={Boolean(errors.confirmPassword)}
-              aria-describedby={
-                errors.confirmPassword ? 'signup-confirm-password-error' : undefined
-              }
-              {...register('confirmPassword')}
-            />
-          </FormField>
-          {serviceError && (
+
+        <div className="space-y-3">
+          <GoogleSignInButton onCredential={handleCredential} disabled={googleLoading} />
+          {googleError && (
             <p className="text-sm text-red-700" role="alert">
-              {serviceError}
+              {googleError}
             </p>
           )}
-          <Button className="w-full" disabled={isSubmitting || isLoading} type="submit">
-            {isSubmitting || isLoading ? 'Creating account...' : 'Sign up'}
-          </Button>
-        </form>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-slate-500">Or continue with resume</span>
+            </div>
+          </div>
+
+          <FileDropzone
+            ariaLabel="Choose a resume file"
+            disabled={status === 'parsing'}
+            file={file}
+            onFileSelect={handleFileSelect}
+          />
+        </div>
+
+        {status === 'parsing' && (
+          <p aria-live="polite" className="text-sm text-slate-600" role="status">
+            Reading your resume...
+          </p>
+        )}
+
+        {status === 'error' && error && (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-red-700" role="alert">
+              {error}
+            </p>
+            <Button onClick={retry} type="button" variant="secondary">
+              Retry
+            </Button>
+          </div>
+        )}
+
         <p className="text-sm text-slate-600">
           Already have an account?{' '}
           <Link className="font-medium text-emerald-800 hover:underline" to="/login">

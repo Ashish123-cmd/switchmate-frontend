@@ -7,4 +7,5 @@ export interface ProfileService {
   saveProfile(profile: UserProfile): Promise<void>;
   savePreferences(preferences: JobPreferences): Promise<void>;
   saveStandardAnswers(answers: StandardAnswers): Promise<void>;
+  completeProfile(): Promise<void>;
 }

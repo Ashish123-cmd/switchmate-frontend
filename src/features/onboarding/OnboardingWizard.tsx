@@ -3,7 +3,6 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { Spinner } from '@/shared/ui/Spinner';
 import { Stepper } from '@/features/onboarding/components/Stepper';
 import { useOnboarding } from '@/features/onboarding/hooks/useOnboarding';
-import { wizardSteps } from '@/features/onboarding/wizardSteps';
 
 export function OnboardingWizard() {
   const { wizard, data, loadError, finishError, isSubmitting, updateData, next, refetch } =
@@ -40,7 +39,7 @@ export function OnboardingWizard() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Build your profile</h1>
       </header>
       <Stepper
-        steps={wizardSteps}
+        steps={wizard.steps}
         currentStepId={wizard.currentStep.id}
         completedStepIds={wizard.completedStepIds}
         onGoTo={wizard.goTo}
@@ -57,6 +56,7 @@ export function OnboardingWizard() {
         onBack={wizard.back}
         isFirst={wizard.isFirst}
         isSubmitting={isSubmitting}
+        showResumeBanner={data.resumeUpload.status === 'success'}
       />
     </section>
   );

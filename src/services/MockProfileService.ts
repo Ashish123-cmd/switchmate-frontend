@@ -53,4 +53,9 @@ export class MockProfileService implements ProfileService {
     await delay();
     writeStorage(storageKeys.standardAnswers, answers);
   }
+
+  async completeProfile(): Promise<void> {
+    const profile = await this.getProfile();
+    writeStorage(storageKeys.profile, { ...profile, onboardingCompleted: true });
+  }
 }

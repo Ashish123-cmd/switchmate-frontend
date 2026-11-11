@@ -5,6 +5,8 @@ import type { AutoApplySettingsService } from '@/domain/AutoApplySettingsService
 import type { JobService } from '@/domain/JobService';
 import type { ProfileService } from '@/domain/ProfileService';
 import type { ResumeParserService } from '@/domain/ResumeParserService';
+import { ApiAuthService } from '@/services/ApiAuthService';
+import { ApiClient } from '@/services/api/ApiClient';
 import { MockApplicationService } from '@/services/MockApplicationService';
 import { MockAuthService } from '@/services/MockAuthService';
 import { MockAutoApplySettingsService } from '@/services/MockAutoApplySettingsService';
@@ -26,8 +28,12 @@ interface ServicesProviderProps {
   services?: AppServices;
 }
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
 const defaultServices: AppServices = {
-  auth: new MockAuthService(),
+  // Auth talks to the Spring Boot backend when VITE_API_BASE_URL is configured;
+  // without it the app falls back to the in-browser mock so the UI can run standalone.
+  auth: apiBaseUrl ? new ApiAuthService(new ApiClient(apiBaseUrl)) : new MockAuthService(),
   profile: new MockProfileService(),
   resumeParser: new MockResumeParserService(),
   jobs: new MockJobService(),

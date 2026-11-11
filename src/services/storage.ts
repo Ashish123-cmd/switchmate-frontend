@@ -1,4 +1,5 @@
 export const storageKeys = {
+  authToken: 'switchmate.authToken',
   currentUser: 'switchmate.currentUser',
   profile: 'switchmate.profile',
   preferences: 'switchmate.preferences',

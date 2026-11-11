@@ -1,4 +1,3 @@
-import type { Education, Experience, UserProfile } from '@/domain/types';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { EditableList } from '@/shared/ui/EditableList';
@@ -18,7 +17,7 @@ export function ProfileStep({
   isFirst,
   isSubmitting,
   showNavigation = true,
-  showResumeBanner = true,
+  showResumeBanner = false,
 }: WizardStepProps) {
   const { profile, isValid, errorFor, updateProfile, updateExperiences, updateEducations } =
     useProfileStep({ data, onChange });
